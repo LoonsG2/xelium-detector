@@ -3,54 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xelium • Detector Facial</title>
+    <title>El que lo lea es ga</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.0/dist/face-api.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { margin:0; background:#0a0a0a; font-family:'Inter',sans-serif; color:white; overflow:hidden; }
         .container { max-width:1000px; margin:40px auto; text-align:center; }
-        h1 { font-size:2.8rem; background:linear-gradient(to right,#00ff9d,#00cc7a); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .video-container { position:relative; width:100%; max-width:820px; margin:0 auto; border-radius:20px; overflow:hidden; box-shadow:0 0 60px rgba(0,255,157,0.4); }
+        h1 { 
+            font-size:3.2rem; 
+            background:linear-gradient(to right,#ff00aa,#00ff9d); 
+            -webkit-background-clip:text; 
+            -webkit-text-fill-color:transparent; 
+            margin-bottom:8px;
+        }
+        .subtitle { color:#ff00aa; font-size:1.3rem; margin-bottom:30px; }
+        .video-container { position:relative; width:100%; max-width:820px; margin:0 auto; border-radius:20px; overflow:hidden; box-shadow:0 0 60px rgba(255,0,170,0.5); }
         video, canvas { width:100%; display:block; border-radius:20px; }
         #status { margin-top:25px; font-size:1.5rem; font-weight:600; padding:18px 40px; border-radius:9999px; display:inline-block; }
         .feliz { background:#22c55e; color:black; }
         .triste { background:#ef4444; color:white; }
         .neutral { background:#64748b; color:white; }
+        button { 
+            margin-top:20px; padding:16px 40px; font-size:1.2rem; font-weight:600; 
+            background:#ff00aa; color:white; border:none; border-radius:9999px; cursor:pointer;
+        }
+        button:hover { background:#cc0088; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Detector Facial en Tiempo Real</h1>
-        <p style="color:#00ff9d; margin-bottom:30px;">Cuadrado verde + detección Feliz / Triste</p>
+        <h1>El que lo lea es ga</h1>
+        <p class="subtitle">Cuadrado verde + detección Feliz / Triste</p>
         
         <div class="video-container">
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
         </div>
 
-        <div id="status" class="neutral">Cargando IA...</div>
+        <button id="startBtn">Iniciar Cámara</button>
+        
+        <div id="status" class="neutral">Haz clic en "Iniciar Cámara" para comenzar</div>
     </div>
 
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const statusEl = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+
+        let stream = null;
 
         async function loadModels() {
             statusEl.textContent = 'Cargando modelos de IA...';
             await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.0/weights');
             await faceapi.nets.faceExpressionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.0/weights');
-            startCamera();
+            statusEl.textContent = 'Modelos cargados • Listo';
         }
 
         async function startCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 820, height: 620 } });
-            video.srcObject = stream;
-            video.addEventListener('loadedmetadata', () => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                detectFaces();
-            });
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 820, height: 620 } 
+                });
+                video.srcObject = stream;
+                video.addEventListener('loadedmetadata', () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    detectFaces();
+                });
+                startBtn.style.display = 'none';
+            } catch (err) {
+                statusEl.textContent = '❌ No se pudo acceder a la cámara';
+            }
         }
 
         async function detectFaces() {
@@ -71,11 +95,10 @@
                     const expr = resized[0].expressions;
                     const dominant = Object.keys(expr).reduce((a,b) => expr[a] > expr[b] ? a : b);
 
-                    let text = '';
+                    let text = '😐 NEUTRAL';
                     let css = 'neutral';
                     if (dominant === 'happy') { text = '😊 FELIZ'; css = 'feliz'; }
                     else if (dominant === 'sad') { text = '😢 TRISTE'; css = 'triste'; }
-                    else { text = '😐 NEUTRAL'; }
 
                     statusEl.textContent = text;
                     statusEl.className = `status ${css}`;
@@ -83,6 +106,7 @@
             }, 80);
         }
 
+        startBtn.addEventListener('click', startCamera);
         window.onload = loadModels;
     </script>
 </body>
